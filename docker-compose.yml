@@ -1,115 +1,100 @@
 version: "3.4"
 services:
-  vpn:
-    container_name: vpn
-    image: dperson/openvpn-client:latest
-    cap_add:
-      - net_admin # required to modify network interfaces
+  qbittorrent:
+    image: ghcr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
     restart: unless-stopped
-    volumes:
-      - /dev/net:/dev/net:z # tun device
-      - ${ROOT}/config/vpn:/vpn # OpenVPN configuration
-    security_opt:
-      - label:disable
-    ports:
-      - 8112:8112 # port for deluge web UI to be reachable from local network
-    command: '-f "" -r 192.168.1.0/24' # enable firewall and route local network traffic
-
-  deluge:
-    container_name: deluge
-    image: linuxserver/deluge:latest
-    restart: unless-stopped
-    network_mode: service:vpn # run on the vpn network
     environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+      - WEBUI_PORT=8112
     volumes:
-      - ${ROOT}/downloads:/downloads # downloads folder
-      - ${ROOT}/config/deluge:/config # config files
-
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/downloads:/media/downloads
+      - ${ROOT}/config/qbittorrent:/config
+    ports:
+      - 6881:6881
+      - 6881:6881/udp
+      - 8112:8112
   jackett:
     container_name: jackett
     image: linuxserver/jackett:latest
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - 9117:9117
     environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/downloads/torrent-blackhole:/downloads # place where to put .torrent files for manual download
-      - ${ROOT}/config/jackett:/config # config files
-
-  nzbget:
-    container_name: nzbget
-    image: linuxserver/nzbget:latest
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-    volumes:
-      - ${ROOT}/downloads:/downloads # download folder
-      - ${ROOT}/config/nzbget:/config # config files
+      - ${ROOT}/downloads/torrent-blackhole:/media/downloads
+      - ${ROOT}/config/jackett:/config
 
   sonarr:
     container_name: sonarr
-    image: linuxserver/sonarr:latest
+    image: linuxserver/sonarr:preview
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - 8989:8989
     environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/config/sonarr:/config # config files
-      - ${ROOT}/complete/tv:/tv # tv shows folder
-      - ${ROOT}/downloads:/downloads # download folder
+      - ${ROOT}/config/sonarr:/config
+      - ${ROOT}:/media
 
   radarr:
     container_name: radarr
-    image: linuxserver/radarr:latest
+    image: linuxserver/radarr:nightly
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - 7878:7878
     environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/config/radarr:/config # config files
-      - ${ROOT}/complete/movies:/movies # movies folder
-      - ${ROOT}/downloads:/downloads # download folder
-
-  plex-server:
-    container_name: plex-server
-    image: plexinc/pms-docker:latest
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ} # timezone, defined in .env
-    network_mode: host
-    volumes:
-      - ${ROOT}/config/plex/db:/config # plex database
-      - ${ROOT}/config/plex/transcode:/transcode # temp transcoded files
-      - ${ROOT}/complete:/data # media library
+      - ${ROOT}/config/radarr:/config
+      - ${ROOT}:/media
 
   bazarr:
     container_name: bazarr
     image: linuxserver/bazarr
     restart: unless-stopped
-    network_mode: host
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-      - UMASK_SET=022 #optional
-    volumes:
-      - ${ROOT}/config/bazarr:/config # config files
-      - ${ROOT}/complete/movies:/movies # movies folder
-      - ${ROOT}/complete/tv:/tv # tv shows folder
     ports:
       - 6767:6767
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/config/bazarr:/config
+      - ${ROOT}:/media
+    ports:
+      - 6767:6767
+  subfinder:
+    container_name: subfinder
+    image: superng6/subfinder
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - TASK=2h
+      - UMASK_SET=022
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${ROOT}/config/subfinder:/config
+      - ${ROOT}:/media
+
