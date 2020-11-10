@@ -1,23 +1,32 @@
 version: "3.4"
 services:
-  qbittorrent:
-    image: ghcr.io/linuxserver/qbittorrent
-    container_name: qbittorrent
-    restart: unless-stopped
+  qbittorrentvpn:
+    container_name: qbittorrentvpn
+    image: binhex/arch-qbittorrentvpn:latest
+    network_mode: bridge
+    # privileged: true
+    # sysctls:
+    #   - net.ipv4.conf.all.src_valid_mark=1
+    cap_add:
+      - NET_ADMIN
     environment:
+      - VPN_PROV=custom
+      - VPN_CLIENT=openvpn
+      - NAME_SERVERS=209.222.18.222,84.200.69.80,37.235.1.174,1.1.1.1,209.222.18.218,37.235.1.177,84.200.70.40,1.0.0.1
+      - ENABLE_PRIVOXY=yes
+      - LAN_NETWORK=172.27.176.0/20
+      - WEBUI_PORT=8112
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=${TZ}
       - UMASK_SET=022
-      - WEBUI_PORT=8112
+    ports:
+      - 8112:8112
+      - 8118:8118
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/downloads:/media/downloads
-      - ${ROOT}/config/qbittorrent:/config
-    ports:
-      - 6881:6881
-      - 6881:6881/udp
-      - 8112:8112
+      - ${ROOT}/config/qbittorrentvpn:/config
+
   jackett:
     container_name: jackett
     image: linuxserver/jackett:latest
@@ -30,7 +39,6 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/downloads/torrent-blackhole:/media/downloads
       - ${ROOT}/config/jackett:/config
 
@@ -46,7 +54,6 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/sonarr:/config
       - ${ROOT}:/media
 
@@ -62,8 +69,37 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/radarr:/config
+      - ${ROOT}:/media
+
+  lidarr:
+    container_name: lidarr
+    image: linuxserver/lidarr:nightly
+    restart: unless-stopped
+    ports:
+      - 8686:8686
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - ${ROOT}/config/lidarr:/config
+      - ${ROOT}:/media
+
+  jellyfin:
+    container_name: jellyfin
+    image: ghcr.io/linuxserver/jellyfin:nightly
+    restart: unless-stopped
+    ports:
+      - 8096:8096
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - ${ROOT}/config/jellyfin:/config
       - ${ROOT}:/media
 
   bazarr:
@@ -78,7 +114,6 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/bazarr:/config
       - ${ROOT}:/media
     ports:
@@ -94,7 +129,6 @@ services:
       - TASK=2h
       - UMASK_SET=022
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/subfinder:/config
       - ${ROOT}:/media
 
