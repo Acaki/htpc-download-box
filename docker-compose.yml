@@ -1,5 +1,44 @@
 version: "3.4"
 services:
+  traefik:
+    container_name: traefik
+    image: traefik:latest
+    restart: always
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${EMAIL}" 
+      - "--certificatesresolvers.myresolver.acme.storage=acme.json"
+    ports:
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${ROOT}/config/traefik/acme.json:/acme.json
+
+  organizr:
+    container_name: organizr
+    image: organizr/organizr:latest
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    volumes:
+      - ${ROOT}/config/organizr:/config
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK_SET=022
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.organizr.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.organizr.entrypoints=websecure"
+      - "traefik.http.routers.organizr.tls.certresolver=myresolver"
+
   qbittorrentvpn:
     container_name: qbittorrentvpn
     image: binhex/arch-qbittorrentvpn:latest
@@ -12,7 +51,7 @@ services:
       - VPN_CLIENT=wireguard
       - NAME_SERVERS=209.222.18.222,84.200.69.80,37.235.1.174,1.1.1.1,209.222.18.218,37.235.1.177,84.200.70.40,1.0.0.1
       - ENABLE_PRIVOXY=yes
-      - LAN_NETWORK=172.27.176.0/20
+      - LAN_NETWORK=${LAN_NETWORK}
       - WEBUI_PORT=8112
       - PUID=${PUID}
       - PGID=${PGID}
@@ -24,6 +63,11 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/downloads:/media/downloads
       - ${ROOT}/config/qbittorrentvpn:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.torrent.rule=Host(`${DOMAIN}`) && PathPrefix(`/torrent`)"
+      - "traefik.http.routers.torrent.entrypoints=websecure"
+      - "traefik.http.routers.torrent.tls.certresolver=myresolver"
 
   jackett:
     container_name: jackett
@@ -39,6 +83,11 @@ services:
     volumes:
       - ${ROOT}/downloads/torrent-blackhole:/media/downloads
       - ${ROOT}/config/jackett:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jackett.rule=Host(`${DOMAIN}`) && PathPrefix(`/jackett`)"
+      - "traefik.http.routers.jackett.entrypoints=websecure"
+      - "traefik.http.routers.jackett.tls.certresolver=myresolver"
 
   sonarr:
     container_name: sonarr
@@ -54,6 +103,11 @@ services:
     volumes:
       - ${ROOT}/config/sonarr:/config
       - ${ROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/sonarr`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
 
   radarr:
     container_name: radarr
@@ -69,6 +123,11 @@ services:
     volumes:
       - ${ROOT}/config/radarr:/config
       - ${ROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/radarr`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=myresolver"
 
   lidarr:
     container_name: lidarr
@@ -84,6 +143,11 @@ services:
     volumes:
       - ${ROOT}/config/lidarr:/config
       - ${ROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/lidarr`)"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=myresolver"
 
   jellyfin:
     container_name: jellyfin
@@ -99,6 +163,11 @@ services:
     volumes:
       - ${ROOT}/config/jellyfin:/config
       - ${ROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`${DOMAIN}`) && PathPrefix(`/jellyfin`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=myresolver"
 
   bazarr:
     container_name: bazarr
@@ -116,6 +185,12 @@ services:
       - ${ROOT}:/media
     ports:
       - 6767:6767
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/bazarr`)"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.tls.certresolver=myresolver"
+
   subfinder:
     container_name: subfinder
     image: superng6/subfinder
