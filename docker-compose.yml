@@ -28,6 +28,7 @@ services:
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       - "traefik.http.routers.traefik.middlewares=traefik-strip-prefix"
       - "traefik.http.middlewares.traefik-strip-prefix.stripprefix.prefixes=/traefik"
+      - "traefik.http.middlewares.auth.forwardauth.address=http://organizr/api/v2/auth?group=1"
 
   organizr:
     container_name: organizr
@@ -53,6 +54,9 @@ services:
   qbittorrentvpn:
     container_name: qbittorrentvpn
     image: binhex/arch-qbittorrentvpn:latest
+    depends_on:
+      - traefik
+      - organizr
     privileged: true
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
@@ -76,12 +80,15 @@ services:
       - "traefik.http.routers.qbittorrent.entrypoints=websecure"
       - "traefik.http.routers.qbittorrent.tls.certresolver=myresolver"
       - "traefik.http.routers.qbittorrent.rule=Host(`${DOMAIN}`) && PathPrefix(`/qbittorrent/`)"
-      - "traefik.http.routers.qbittorrent.middlewares=qbittorrent-stripprefix"
+      - "traefik.http.routers.qbittorrent.middlewares=qbittorrent-stripprefix,auth"
       - "traefik.http.middlewares.qbittorrent-stripprefix.stripPrefix.prefixes=/qbittorrent"
 
   jackett:
     container_name: jackett
     image: linuxserver/jackett:latest
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 9117:9117
@@ -98,10 +105,14 @@ services:
       - "traefik.http.routers.jackett.rule=Host(`${DOMAIN}`) && PathPrefix(`/jackett`)"
       - "traefik.http.routers.jackett.entrypoints=websecure"
       - "traefik.http.routers.jackett.tls.certresolver=myresolver"
+      - "traefik.http.routers.jackett.middlewares=auth"
 
   sonarr:
     container_name: sonarr
     image: linuxserver/sonarr:preview
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 8989:8989
@@ -118,10 +129,14 @@ services:
       - "traefik.http.routers.sonarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/sonarr`)"
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
+      - "traefik.http.routers.sonarr.middlewares=auth"
 
   radarr:
     container_name: radarr
     image: linuxserver/radarr:nightly
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 7878:7878
@@ -138,10 +153,14 @@ services:
       - "traefik.http.routers.radarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/radarr`)"
       - "traefik.http.routers.radarr.entrypoints=websecure"
       - "traefik.http.routers.radarr.tls.certresolver=myresolver"
+      - "traefik.http.routers.radarr.middlewares=auth"
 
   lidarr:
     container_name: lidarr
     image: linuxserver/lidarr:nightly
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 8686:8686
@@ -158,10 +177,14 @@ services:
       - "traefik.http.routers.lidarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/lidarr`)"
       - "traefik.http.routers.lidarr.entrypoints=websecure"
       - "traefik.http.routers.lidarr.tls.certresolver=myresolver"
+      - "traefik.http.routers.lidarr.middlewares=auth"
 
   jellyfin:
     container_name: jellyfin
     image: ghcr.io/linuxserver/jellyfin:latest
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 8096:8096
@@ -178,10 +201,14 @@ services:
       - "traefik.http.routers.jellyfin.rule=Host(`${DOMAIN}`) && PathPrefix(`/jellyfin`)"
       - "traefik.http.routers.jellyfin.entrypoints=websecure"
       - "traefik.http.routers.jellyfin.tls.certresolver=myresolver"
+      - "traefik.http.routers.jellyfin.middlewares=auth"
 
   bazarr:
     container_name: bazarr
     image: linuxserver/bazarr
+    depends_on:
+      - traefik
+      - organizr
     restart: unless-stopped
     ports:
       - 6767:6767
@@ -200,6 +227,7 @@ services:
       - "traefik.http.routers.bazarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/bazarr`)"
       - "traefik.http.routers.bazarr.entrypoints=websecure"
       - "traefik.http.routers.bazarr.tls.certresolver=myresolver"
+      - "traefik.http.routers.bazarr.middlewares=auth"
 
   subfinder:
     container_name: subfinder
