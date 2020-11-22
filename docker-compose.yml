@@ -20,11 +20,14 @@ services:
       - ${ROOT}/config/traefik/acme.json:/acme.json
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
+      - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/traefik/`) || Headers(`Referer`, `https://${DOMAIN}/traefik/dashboard/`))"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.middlewares=traefik-strip-prefix"
+      - "traefik.http.middlewares.traefik-strip-prefix.stripprefix.prefixes=/traefik"
 
   organizr:
     container_name: organizr
@@ -39,6 +42,8 @@ services:
       - PGID=${PGID}
       - UMASK_SET=022
       - TZ=${TZ}
+      - fpm=true
+      - branch=v2-develop
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.organizr.rule=Host(`${DOMAIN}`)"
