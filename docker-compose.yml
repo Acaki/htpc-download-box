@@ -5,8 +5,7 @@ services:
     image: traefik:latest
     restart: always
     command:
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
+      - "--api"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.websecure.address=:443"
@@ -14,11 +13,18 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=${EMAIL}" 
       - "--certificatesresolvers.myresolver.acme.storage=acme.json"
     ports:
+      - 80:80
       - 443:443
-      - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${ROOT}/config/traefik/acme.json:/acme.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
 
   organizr:
     container_name: organizr
@@ -42,15 +48,12 @@ services:
   qbittorrentvpn:
     container_name: qbittorrentvpn
     image: binhex/arch-qbittorrentvpn:latest
-    network_mode: bridge
     privileged: true
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     environment:
       - VPN_PROV=custom
       - VPN_CLIENT=wireguard
-      - NAME_SERVERS=209.222.18.222,84.200.69.80,37.235.1.174,1.1.1.1,209.222.18.218,37.235.1.177,84.200.70.40,1.0.0.1
-      - ENABLE_PRIVOXY=yes
       - LAN_NETWORK=${LAN_NETWORK}
       - WEBUI_PORT=8112
       - PUID=${PUID}
@@ -58,16 +61,18 @@ services:
       - UMASK_SET=022
     ports:
       - 8112:8112
-      - 8118:8118
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/downloads:/media/downloads
       - ${ROOT}/config/qbittorrentvpn:/config
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.torrent.rule=Host(`${DOMAIN}`) && PathPrefix(`/torrent`)"
-      - "traefik.http.routers.torrent.entrypoints=websecure"
-      - "traefik.http.routers.torrent.tls.certresolver=myresolver"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8112"
+      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=myresolver"
+      - "traefik.http.routers.qbittorrent.rule=Host(`${DOMAIN}`) && PathPrefix(`/qbittorrent/`)"
+      - "traefik.http.routers.qbittorrent.middlewares=qbittorrent-stripprefix"
+      - "traefik.http.middlewares.qbittorrent-stripprefix.stripPrefix.prefixes=/qbittorrent"
 
   jackett:
     container_name: jackett
