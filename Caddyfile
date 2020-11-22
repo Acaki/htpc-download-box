@@ -1,0 +1,17 @@
+{$DOMAIN}
+
+reverse_proxy organizr:80
+reverse_proxy /sonarr* sonarr:8989
+reverse_proxy /radarr* radarr:7878
+reverse_proxy /bazarr* bazarr:6767
+reverse_proxy /lidarr* lidarr:8686
+reverse_proxy /jellyfin* jellyfin:8096
+route /torrent* {
+  uri strip_prefix /torrent
+  reverse_proxy qbittorrentvpn:8112 {
+    header_up X-Forwarded-Host {host}:8112
+    header_up -Origin
+    header_up -Referer
+  }
+}
+reverse_proxy /jackett* jackett:9117
