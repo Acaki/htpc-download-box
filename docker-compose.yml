@@ -278,8 +278,9 @@ services:
       - "traefik.http.middlewares.cloud_redirectregex.redirectregex.replacement=/remote.php/dav/"
 
   db:
-    restart: always
+    container_name: db
     image: postgres:11
+    restart: always
     environment:
       - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=password
@@ -288,6 +289,7 @@ services:
       - nextcloud-db:/var/lib/postgresql/data
 
   redis:
+    container_name: redis
     image: redis:latest
     restart: always
     volumes:
