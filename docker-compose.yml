@@ -28,7 +28,7 @@ services:
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       - "traefik.http.routers.traefik.middlewares=traefik-strip-prefix"
       - "traefik.http.middlewares.traefik-strip-prefix.stripprefix.prefixes=/traefik"
-      - "traefik.http.middlewares.auth.forwardauth.address=http://organizr/api/v2/auth?group=1"
+      - "traefik.http.middlewares.auth.forwardauth.address=https://${DOMAIN}/api/v2/auth?group=1"
 
   organizr:
     container_name: organizr
@@ -202,6 +202,7 @@ services:
       - "traefik.http.routers.jellyfin.entrypoints=websecure"
       - "traefik.http.routers.jellyfin.tls.certresolver=myresolver"
       - "traefik.http.routers.jellyfin.middlewares=auth"
+      - "traefik.http.services.jellyfin.loadBalancer.server.port=8096"
 
   bazarr:
     container_name: bazarr
@@ -242,6 +243,7 @@ services:
     volumes:
       - ${ROOT}/config/subfinder:/config
       - ${ROOT}:/media
+        
   nextcloud:
     container_name: nextcloud
     image: nextcloud
