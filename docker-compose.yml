@@ -165,9 +165,9 @@ services:
       - MYSQL_HOST=db
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
-      - MYSQL_PASSWORD=password
+      - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD}
       - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=adminpass
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
       - REDIS_HOST=redis
       - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN}
     volumes:
@@ -187,15 +187,44 @@ services:
       - "traefik.http.middlewares.cloud_redirectregex.redirectregex.regex=/.well-known/(card|cal)dav"
       - "traefik.http.middlewares.cloud_redirectregex.redirectregex.replacement=/remote.php/dav/"
 
+  pp-1:
+    container_name: pp-1
+    image: photoprism/photoprism:latest
+    restart: always
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    ports:
+      - 2342:2342
+    healthcheck:
+      test: ["CMD", "photoprism", "status"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+    environment:
+      PHOTOPRISM_DEBUG: "true"
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD}
+      PHOTOPRISM_SITE_URL: "https://pp-1.${DOMAIN}/"
+      PHOTOPRISM_DATABASE_DRIVER: "mysql"
+      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/photoprism?charset=utf8mb4,utf8&parseTime=true"
+      UID: ${PUID}
+      GID: ${PGID}
+    volumes:
+      - ${CONFIGROOT}/pp-1:/photoprism/storage
+      - ${MEDIAROOT}/nextcloud/data/mesnigan/files/Photos:/photoprism/originals
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.pp-1.loadbalancer.server.port=2342"
+      - "traefik.http.routers.pp-1.entrypoints=websecure"
+      - "traefik.http.routers.pp-1.tls.certresolver=myresolver"
+      - "traefik.http.routers.pp-1.rule=Host(`pp-1.${DOMAIN}`)"
+
   db:
     container_name: db
     restart: always
     image: mariadb
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: nextcloud
-      MYSQL_USER: nextcloud
-      MYSQL_PASSWORD: password
     volumes:
       - ${CONFIGROOT}/db/mariadb:/var/lib/mysql
 
