@@ -54,37 +54,30 @@ services:
       - "traefik.http.routers.organizr.entrypoints=websecure"
       - "traefik.http.routers.organizr.tls.certresolver=myresolver"
 
-  qbittorrentvpn:
-    container_name: qbittorrentvpn
-    image: binhex/arch-qbittorrentvpn:latest
-    depends_on:
-      - traefik
-      - organizr
-    restart: always
-    privileged: true
+  transmission-openvpn:
+    container_name: transmission
+    image: haugene/transmission-openvpn
     sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
-    environment:
-      - VPN_PROV=custom
-      - VPN_CLIENT=wireguard
-      - LAN_NETWORK=${LAN_NETWORK}
-      - WEBUI_PORT=8112
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - UMASK_SET=022
-    ports:
-      - 8112:8112
+      - "net.ipv6.conf.all.disable_ipv6=0"
+    cap_add:
+      - NET_ADMIN
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ${MEDIAROOT}/downloads:/media/downloads
-      - ${CONFIGROOT}/qbittorrentvpn:/config
+      - ${MEDIAROOT}/downloads:/data
+    environment:
+      - OPENVPN_PROVIDER=MULLVAD
+      - OPENVPN_CONFIG=hk_all
+      - OPENVPN_USERNAME=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASS}
+      - LOCAL_NETWORK=${LAN_NETWORK}
+    ports:
+      - '9091:9091'
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8112"
-      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
-      - "traefik.http.routers.qbittorrent.tls.certresolver=myresolver"
-      - "traefik.http.routers.qbittorrent.rule=Host(`torrent.${DOMAIN}`)"
-      - "traefik.http.routers.qbittorrent.middlewares=auth"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      - "traefik.http.routers.transmission.entrypoints=websecure"
+      - "traefik.http.routers.transmission.tls.certresolver=myresolver"
+      - "traefik.http.routers.transmission.rule=Host(`torrent.${DOMAIN}`)"
+      - "traefik.http.routers.transmission.middlewares=auth"
 
   jackett:
     container_name: jackett
