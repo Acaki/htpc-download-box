@@ -25,13 +25,12 @@ services:
       - "traefik.http.routers.traefik.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.routers.traefik-rtr.entrypoints=websecure"
-      - "traefik.http.routers.traefik-rtr.rule=Host(`${DOMAIN}`) && (PathPrefix(`/traefik/`) || Headers(`Referer`, `https://${DOMAIN}/traefik/dashboard/`))"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik-rtr.tls=true"
       - "traefik.http.routers.traefik-rtr.tls.certresolver=myresolver"
       - "traefik.http.routers.traefik-rtr.service=api@internal"
+      - "traefik.http.routers.traefik-rtr.middlewares=auth"
       - "traefik.http.services.traefik-rtr.loadbalancer.server.port=8080"
-      - "traefik.http.routers.traefik-rtr.middlewares=traefik-strip-prefix"
-      - "traefik.http.middlewares.traefik-strip-prefix.stripprefix.prefixes=/traefik"
       - "traefik.http.middlewares.auth.forwardauth.address=https://${DOMAIN}/api/v2/auth?group=1"
 
   organizr:
@@ -84,9 +83,8 @@ services:
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8112"
       - "traefik.http.routers.qbittorrent.entrypoints=websecure"
       - "traefik.http.routers.qbittorrent.tls.certresolver=myresolver"
-      - "traefik.http.routers.qbittorrent.rule=Host(`${DOMAIN}`) && PathPrefix(`/qbittorrent/`)"
-      - "traefik.http.routers.qbittorrent.middlewares=qbittorrent-stripprefix,auth"
-      - "traefik.http.middlewares.qbittorrent-stripprefix.stripPrefix.prefixes=/qbittorrent"
+      - "traefik.http.routers.qbittorrent.rule=Host(`torrent.${DOMAIN}`)"
+      - "traefik.http.routers.qbittorrent.middlewares=auth"
 
   jackett:
     container_name: jackett
@@ -107,7 +105,7 @@ services:
       - ${CONFIGROOT}/jackett:/config
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jackett.rule=Host(`${DOMAIN}`) && PathPrefix(`/jackett`)"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.${DOMAIN}`)"
       - "traefik.http.routers.jackett.entrypoints=websecure"
       - "traefik.http.routers.jackett.tls.certresolver=myresolver"
       - "traefik.http.routers.jackett.middlewares=auth"
@@ -131,7 +129,7 @@ services:
       - ${MEDIAROOT}:/media
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sonarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/sonarr`)"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)"
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
       - "traefik.http.routers.sonarr.middlewares=auth"
@@ -155,7 +153,7 @@ services:
       - ${MEDIAROOT}:/media
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.radarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/radarr`)"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
       - "traefik.http.routers.radarr.entrypoints=websecure"
       - "traefik.http.routers.radarr.tls.certresolver=myresolver"
       - "traefik.http.routers.radarr.middlewares=auth"
@@ -183,7 +181,7 @@ services:
       - ${MEDIAROOT}/nextcloud:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nextcloud.rule=Host(`${DOMAIN}`) && PathPrefix(`/nextcloud`)"
+      - "traefik.http.routers.nextcloud.rule=Host(`nc.${DOMAIN}`)"
       - "traefik.http.routers.nextcloud.entrypoints=websecure"
       - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
       - "traefik.http.routers.nextcloud.middlewares=cloud_headers,cloud_redirectregex"
