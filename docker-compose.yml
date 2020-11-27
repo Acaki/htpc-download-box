@@ -155,8 +155,7 @@ services:
 
   nextcloud:
     container_name: nextcloud
-    build:
-      context: ./nextcloud
+    image: nextcloud
     restart: always
     ports:
       - 8082:80
