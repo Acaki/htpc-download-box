@@ -17,7 +17,7 @@ services:
       - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${ROOT}/config/traefik/acme.json:/acme.json
+      - ${CONFIGROOT}/traefik/acme.json:/acme.json
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=web"
@@ -41,7 +41,7 @@ services:
     ports:
       - 8081:8081
     volumes:
-      - ${ROOT}/config/organizr:/config
+      - ${CONFIGROOT}/organizr:/config
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -77,8 +77,8 @@ services:
       - 8112:8112
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/downloads:/media/downloads
-      - ${ROOT}/config/qbittorrentvpn:/config
+      - ${MEDIAROOT}/downloads:/media/downloads
+      - ${CONFIGROOT}/qbittorrentvpn:/config
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8112"
@@ -103,8 +103,8 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - ${ROOT}/downloads/torrent-blackhole:/media/downloads
-      - ${ROOT}/config/jackett:/config
+      - ${MEDIAROOT}/downloads/torrent-blackhole:/media/downloads
+      - ${CONFIGROOT}/jackett:/config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jackett.rule=Host(`${DOMAIN}`) && PathPrefix(`/jackett`)"
@@ -127,8 +127,8 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - ${ROOT}/config/sonarr:/config
-      - ${ROOT}:/media
+      - ${CONFIGROOT}/sonarr:/config
+      - ${MEDIAROOT}:/media
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/sonarr`)"
@@ -151,8 +151,8 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - ${ROOT}/config/radarr:/config
-      - ${ROOT}:/media
+      - ${CONFIGROOT}/radarr:/config
+      - ${MEDIAROOT}:/media
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`${DOMAIN}`) && PathPrefix(`/radarr`)"
@@ -162,7 +162,8 @@ services:
 
   nextcloud:
     container_name: nextcloud
-    image: nextcloud
+    build:
+      context: ./nextcloud
     restart: always
     ports:
       - 8082:80
@@ -179,7 +180,7 @@ services:
       - REDIS_HOST=redis
       - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN}
     volumes:
-      - ${ROOT}/nextcloud:/var/www/html
+      - ${MEDIAROOT}/nextcloud:/var/www/html
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nextcloud.rule=Host(`${DOMAIN}`) && PathPrefix(`/nextcloud`)"
@@ -205,13 +206,13 @@ services:
       MYSQL_USER: nextcloud
       MYSQL_PASSWORD: password
     volumes:
-      - ${ROOT}/config/db/mariadb:/var/lib/mysql
+      - ${CONFIGROOT}/db/mariadb:/var/lib/mysql
 
   redis:
     container_name: redis
     image: redis:latest
     restart: always
     volumes:
-      - ${ROOT}/config/db/redis:/data
+      - ${CONFIGROOT}/db/redis:/data
 
 
