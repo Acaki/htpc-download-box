@@ -8,6 +8,7 @@ services:
       - "--api"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=${EMAIL}" 
@@ -204,9 +205,11 @@ services:
     environment:
       PHOTOPRISM_DEBUG: "true"
       PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD}
+      PHOTOPRISM_PUBLIC: "false"
       PHOTOPRISM_SITE_URL: "https://pp-1.${DOMAIN}/"
+      PHOTOPRISM_HTTP_PORT: 2342
       PHOTOPRISM_DATABASE_DRIVER: "mysql"
-      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/photoprism?charset=utf8mb4,utf8&parseTime=true"
+      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/pp_1?charset=utf8mb4,utf8&parseTime=true"
       UID: ${PUID}
       GID: ${PGID}
     volumes:
@@ -218,6 +221,40 @@ services:
       - "traefik.http.routers.pp-1.entrypoints=websecure"
       - "traefik.http.routers.pp-1.tls.certresolver=myresolver"
       - "traefik.http.routers.pp-1.rule=Host(`pp-1.${DOMAIN}`)"
+
+  pp-2:
+    container_name: pp-2
+    image: photoprism/photoprism:latest
+    restart: always
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    ports:
+      - 2343:2343
+    healthcheck:
+      test: ["CMD", "photoprism", "status"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+    environment:
+      PHOTOPRISM_DEBUG: "true"
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD}
+      PHOTOPRISM_PUBLIC: "false"
+      PHOTOPRISM_SITE_URL: "https://pp-2.${DOMAIN}/"
+      PHOTOPRISM_HTTP_PORT: 2343
+      PHOTOPRISM_DATABASE_DRIVER: "mysql"
+      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/pp_2?charset=utf8mb4,utf8&parseTime=true"
+      UID: ${PUID}
+      GID: ${PGID}
+    volumes:
+      - ${CONFIGROOT}/pp-2:/photoprism/storage
+      - ${MEDIAROOT}/photos/jimmy:/photoprism/originals
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.pp-2.loadbalancer.server.port=2343"
+      - "traefik.http.routers.pp-2.entrypoints=websecure"
+      - "traefik.http.routers.pp-2.tls.certresolver=myresolver"
+      - "traefik.http.routers.pp-2.rule=Host(`pp-2.${DOMAIN}`)"
 
   db:
     container_name: db
