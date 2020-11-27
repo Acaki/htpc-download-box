@@ -170,10 +170,10 @@ services:
       - db
       - redis
     environment:
-      - POSTGRES_DB=nextcloud
-      - POSTGRES_USER=nextcloud
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_HOST=db
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=password
       - NEXTCLOUD_ADMIN_USER=admin
       - NEXTCLOUD_ADMIN_PASSWORD=adminpass
       - REDIS_HOST=redis
@@ -197,15 +197,21 @@ services:
 
   db:
     container_name: db
-    image: postgres:11
     restart: always
+    image: mariadb
     environment:
-      - POSTGRES_USER=nextcloud
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=nextcloud
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: password
+    volumes:
+      - ${ROOT}/config/db/mariadb:/var/lib/mysql
 
   redis:
     container_name: redis
     image: redis:latest
     restart: always
+    volumes:
+      - ${ROOT}/config/db/redis:/data
+
 
