@@ -71,6 +71,10 @@ services:
       - OPENVPN_USERNAME=${VPN_USER}
       - OPENVPN_PASSWORD=${VPN_PASS}
       - LOCAL_NETWORK=${LAN_NETWORK}
+      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
+      - TRANSMISSION_RPC_ENABLED=true
+      - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_USER}
+      - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_PASS}
     ports:
       - '9091:9091'
     labels:
@@ -79,7 +83,6 @@ services:
       - "traefik.http.routers.transmission.entrypoints=websecure"
       - "traefik.http.routers.transmission.tls.certresolver=myresolver"
       - "traefik.http.routers.transmission.rule=Host(`torrent.${DOMAIN}`)"
-      - "traefik.http.routers.transmission.middlewares=auth"
 
   jackett:
     container_name: jackett
@@ -128,6 +131,11 @@ services:
       - "traefik.http.routers.sonarr.entrypoints=websecure"
       - "traefik.http.routers.sonarr.tls.certresolver=myresolver"
       - "traefik.http.routers.sonarr.middlewares=auth"
+      - "traefik.http.routers.sonarr.priority=1"
+      - "traefik.http.routers.sonarr-api.rule=Host(`sonarr.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.sonarr-api.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.sonarr-api.priority=2"
 
   radarr:
     container_name: radarr
@@ -152,6 +160,11 @@ services:
       - "traefik.http.routers.radarr.entrypoints=websecure"
       - "traefik.http.routers.radarr.tls.certresolver=myresolver"
       - "traefik.http.routers.radarr.middlewares=auth"
+      - "traefik.http.routers.radarr.priority=1"
+      - "traefik.http.routers.radarr-api.rule=Host(`radarr.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.radarr-api.entrypoints=websecure"
+      - "traefik.http.routers.radarr-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.radarr-api.priority=2"
 
   nextcloud:
     container_name: nextcloud
