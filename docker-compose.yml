@@ -1,5 +1,23 @@
 version: "3.4"
 services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer
+    restart: always
+    command: --no-auth
+    ports:
+      - "9000:9000"
+    volumes:
+      - ${CONFIGROOT}/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls.certresolver=myresolver"
+      - "traefik.http.routers.portainer.middlewares=auth"
+
   traefik:
     container_name: traefik
     image: traefik:latest
