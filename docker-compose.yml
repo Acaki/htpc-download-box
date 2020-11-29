@@ -30,7 +30,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=${EMAIL}" 
+      - "--certificatesresolvers.myresolver.acme.email=${EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=acme.json"
     ports:
       - 80:80
@@ -193,17 +193,20 @@ services:
     ports:
       - 8082:80
     depends_on:
-      - db
+      - postgres
       - redis
+    user: ${PUID}:${PGID}
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
     environment:
-      - MYSQL_HOST=db
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
-      - MYSQL_PASSWORD=${NEXTCLOUD_MYSQL_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DATABASE_PASS}
       - NEXTCLOUD_ADMIN_USER=admin
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
       - REDIS_HOST=redis
-      - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN}
+      - NEXTCLOUD_TRUSTED_DOMAINS=nc.${DOMAIN}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/nextcloud:/var/www/html
@@ -232,21 +235,23 @@ services:
       - apparmor:unconfined
     ports:
       - 2342:2342
+    depends_on:
+      - mariadb
     healthcheck:
       test: ["CMD", "photoprism", "status"]
       interval: 60s
       timeout: 15s
       retries: 5
     environment:
-      PHOTOPRISM_DEBUG: "true"
-      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD}
-      PHOTOPRISM_PUBLIC: "false"
-      PHOTOPRISM_SITE_URL: "https://pp-1.${DOMAIN}/"
-      PHOTOPRISM_HTTP_PORT: 2342
-      PHOTOPRISM_DATABASE_DRIVER: "mysql"
-      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/pp_1?charset=utf8mb4,utf8&parseTime=true"
-      UID: ${PUID}
-      GID: ${PGID}
+      - PHOTOPRISM_ADMIN_PASSWORD=${PHOTOPRISM_ADMIN_PASSWORD}
+      - PHOTOPRISM_PUBLIC=false
+      - PHOTOPRISM_SITE_URL=https://pp-1.${DOMAIN}/
+      - PHOTOPRISM_HTTP_PORT=2342
+      - PHOTOPRISM_DATABASE_DRIVER=mysql
+      - PHOTOPRISM_DATABASE_DSN=photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(mariadb:3306)/pp_1?charset=utf8mb4,utf8&parseTime=true
+      - PHOTOPRISM_ORIGINALS_LIMIT=10000
+      - UID=${PUID}
+      - GID=${PGID}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-1:/photoprism/storage
@@ -267,21 +272,23 @@ services:
       - apparmor:unconfined
     ports:
       - 2343:2343
+    depends_on:
+      - mariadb
     healthcheck:
       test: ["CMD", "photoprism", "status"]
       interval: 60s
       timeout: 15s
       retries: 5
     environment:
-      PHOTOPRISM_DEBUG: "true"
-      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD}
-      PHOTOPRISM_PUBLIC: "false"
-      PHOTOPRISM_SITE_URL: "https://pp-2.${DOMAIN}/"
-      PHOTOPRISM_HTTP_PORT: 2343
-      PHOTOPRISM_DATABASE_DRIVER: "mysql"
-      PHOTOPRISM_DATABASE_DSN: "photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(db:3306)/pp_2?charset=utf8mb4,utf8&parseTime=true"
-      UID: ${PUID}
-      GID: ${PGID}
+      - PHOTOPRISM_ADMIN_PASSWORD=${PHOTOPRISM_ADMIN_PASSWORD}
+      - PHOTOPRISM_PUBLIC=false
+      - PHOTOPRISM_SITE_URL=https://pp-2.${DOMAIN}/
+      - PHOTOPRISM_HTTP_PORT=2343
+      - PHOTOPRISM_DATABASE_DRIVER=mysql
+      - PHOTOPRISM_DATABASE_DSN=photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(mariadb:3306)/pp_2?charset=utf8mb4,utf8&parseTime=true
+      - PHOTOPRISM_ORIGINALS_LIMIT=10000
+      - UID=${PUID}
+      - GID=${PGID}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-2:/photoprism/storage
@@ -293,15 +300,34 @@ services:
       - "traefik.http.routers.pp-2.tls.certresolver=myresolver"
       - "traefik.http.routers.pp-2.rule=Host(`pp-2.${DOMAIN}`)"
 
-  db:
-    container_name: db
+  mariadb:
+    container_name: mariadb
     restart: always
     image: mariadb
+    entrypoint: sh -c "
+      echo 'CREATE USER IF NOT EXISTS \"photoprism\"@\"%\" IDENTIFIED BY \"${PHOTOPRISM_DATABASE_PASS}\";
+      CREATE DATABASE IF NOT EXISTS pp_1;
+      CREATE DATABASE IF NOT EXISTS pp_2;
+      GRANT ALL PRIVILEGES ON *.* TO \"photoprism\"@\"%\";' > /docker-entrypoint-initdb.d/init.sql;
+      /usr/local/bin/docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/db/mariadb:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+
+  postgres:
+    container_name: postgres
+    restart: always
+    image: postgres
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DATABASE_PASS}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIGROOT}/db/postgres:/var/lib/postgresql/data
 
   redis:
     container_name: redis
@@ -310,5 +336,3 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/db/redis:/data
-
-
