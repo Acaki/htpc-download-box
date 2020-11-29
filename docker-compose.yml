@@ -8,6 +8,7 @@ services:
     ports:
       - "9000:9000"
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/portainer:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
@@ -35,6 +36,7 @@ services:
       - 80:80
       - 443:443
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${CONFIGROOT}/traefik/acme.json:/acme.json
     labels:
@@ -203,6 +205,7 @@ services:
       - REDIS_HOST=redis
       - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/nextcloud:/var/www/html
       - ${MEDIAROOT}/nextcloud:/var/www/html/data
     labels:
@@ -245,6 +248,7 @@ services:
       UID: ${PUID}
       GID: ${PGID}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-1:/photoprism/storage
       - ${MEDIAROOT}/nextcloud/mesnigan/files/Photos:/photoprism/originals
     labels:
@@ -279,6 +283,7 @@ services:
       UID: ${PUID}
       GID: ${PGID}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-2:/photoprism/storage
       - ${MEDIAROOT}/photos/jimmy:/photoprism/originals
     labels:
@@ -295,6 +300,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/db/mariadb:/var/lib/mysql
 
   redis:
@@ -302,6 +308,7 @@ services:
     image: redis:latest
     restart: always
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/db/redis:/data
 
 
