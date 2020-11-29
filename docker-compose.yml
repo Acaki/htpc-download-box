@@ -203,7 +203,8 @@ services:
       - REDIS_HOST=redis
       - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN}
     volumes:
-      - ${MEDIAROOT}/nextcloud:/var/www/html
+      - ${CONFIGROOT}/nextcloud:/var/www/html
+      - ${MEDIAROOT}/nextcloud:/var/www/html/data
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nextcloud.rule=Host(`nc.${DOMAIN}`)"
@@ -245,7 +246,7 @@ services:
       GID: ${PGID}
     volumes:
       - ${CONFIGROOT}/pp-1:/photoprism/storage
-      - ${MEDIAROOT}/nextcloud/data/mesnigan/files/Photos:/photoprism/originals
+      - ${MEDIAROOT}/nextcloud/mesnigan/files/Photos:/photoprism/originals
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.pp-1.loadbalancer.server.port=2342"
