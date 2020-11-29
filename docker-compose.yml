@@ -75,34 +75,34 @@ services:
       - "traefik.http.routers.organizr.entrypoints=websecure"
       - "traefik.http.routers.organizr.tls.certresolver=myresolver"
 
-  transmission-openvpn:
-    container_name: transmission
-    image: haugene/transmission-openvpn
+  qbittorrentvpn:
+    container_name: qbittorrentvpn
+    image: binhex/arch-qbittorrentvpn:latest
+    depends_on:
+      - traefik
     restart: always
+    privileged: true
     sysctls:
-      - "net.ipv6.conf.all.disable_ipv6=0"
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ${MEDIAROOT}/downloads:/data
+      - net.ipv4.conf.all.src_valid_mark=1
     environment:
-      - OPENVPN_PROVIDER=MULLVAD
-      - OPENVPN_CONFIG=hk_all
-      - OPENVPN_USERNAME=${VPN_USER}
-      - OPENVPN_PASSWORD=${VPN_PASS}
-      - LOCAL_NETWORK=${LAN_NETWORK}
-      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
-      - TRANSMISSION_RPC_ENABLED=true
-      - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_USER}
-      - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_PASS}
+      - VPN_PROV=custom
+      - VPN_CLIENT=wireguard
+      - LAN_NETWORK=${LAN_NETWORK}
+      - WEBUI_PORT=8112
+      - PUID=${PUID}
+      - PGID=${PGID}
     ports:
-      - '9091:9091'
+      - 8112:8112
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIAROOT}/downloads:/media/downloads
+      - ${CONFIGROOT}/qbittorrentvpn:/config
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
-      - "traefik.http.routers.transmission.entrypoints=websecure"
-      - "traefik.http.routers.transmission.tls.certresolver=myresolver"
-      - "traefik.http.routers.transmission.rule=Host(`torrent.${DOMAIN}`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8112"
+      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=myresolver"
+      - "traefik.http.routers.qbittorrent.rule=Host(`torrent.${DOMAIN}`)"
 
   jackett:
     container_name: jackett
