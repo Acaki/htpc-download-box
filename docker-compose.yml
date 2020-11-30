@@ -256,6 +256,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-1:/photoprism/storage
       - ${MEDIAROOT}/nextcloud/mesnigan/files/Photos:/photoprism/originals
+      - ${MEDIAROOT}/nextcloud/mesnigan/files/Videos:/photoprism/originals/Videos
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.pp-1.loadbalancer.server.port=2342"
