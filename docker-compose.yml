@@ -144,7 +144,6 @@ services:
     image: linuxserver/jackett:latest
     depends_on:
       - traefik
-      - organizr
     restart: always
     ports:
       - 9117:9117
@@ -168,7 +167,6 @@ services:
     image: linuxserver/sonarr:preview
     depends_on:
       - traefik
-      - organizr
     restart: always
     ports:
       - 8989:8989
@@ -197,7 +195,6 @@ services:
     image: linuxserver/radarr:nightly
     depends_on:
       - traefik
-      - organizr
     restart: always
     ports:
       - 7878:7878
@@ -266,7 +263,6 @@ services:
     image: ghcr.io/linuxserver/jellyfin:latest
     depends_on:
       - traefik
-      - organizr
     restart: always
     ports:
       - 8096:8096
