@@ -261,10 +261,35 @@ services:
       - "traefik.http.middlewares.cloud_redirectregex.redirectregex.regex=/.well-known/(card|cal)dav"
       - "traefik.http.middlewares.cloud_redirectregex.redirectregex.replacement=/remote.php/dav/"
 
+  jellyfin:
+    container_name: jellyfin
+    image: ghcr.io/linuxserver/jellyfin:latest
+    depends_on:
+      - traefik
+      - organizr
+    restart: always
+    ports:
+      - 8096:8096
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - ${CONFIGROOT}/jellyfin:/config
+      - ${MEDIAROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN}`) || (Host(`${DOMAIN}`) && PathPrefix(`/jellyfin`))"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=myresolver"
+      - "traefik.http.services.jellyfin.loadBalancer.server.port=8096"
+
   pp-1:
     container_name: pp-1
     image: photoprism/photoprism:latest
     restart: always
+    user: "${PUID}:${PGID}"
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
@@ -285,8 +310,6 @@ services:
       - PHOTOPRISM_DATABASE_DRIVER=mysql
       - PHOTOPRISM_DATABASE_DSN=photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(mariadb:3306)/pp_1?charset=utf8mb4,utf8&parseTime=true
       - PHOTOPRISM_ORIGINALS_LIMIT=10000
-      - UID=${PUID}
-      - GID=${PGID}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-1:/photoprism/storage
@@ -303,6 +326,7 @@ services:
     container_name: pp-2
     image: photoprism/photoprism:latest
     restart: always
+    user: "${PUID}:${PGID}"
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
@@ -323,8 +347,6 @@ services:
       - PHOTOPRISM_DATABASE_DRIVER=mysql
       - PHOTOPRISM_DATABASE_DSN=photoprism:${PHOTOPRISM_DATABASE_PASS}@tcp(mariadb:3306)/pp_2?charset=utf8mb4,utf8&parseTime=true
       - PHOTOPRISM_ORIGINALS_LIMIT=10000
-      - UID=${PUID}
-      - GID=${PGID}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${CONFIGROOT}/pp-2:/photoprism/storage
