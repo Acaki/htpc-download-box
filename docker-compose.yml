@@ -155,7 +155,7 @@ services:
       - TZ=${TZ}
       - UMASK_SET=022
     volumes:
-      - ${MEDIAROOT}/downloads/torrent-blackhole:/media/downloads
+      - ${MEDIAROOT}/downloads:/media/downloads
       - ${CONFIGROOT}/jackett:/config
     labels:
       - "traefik.enable=true"
