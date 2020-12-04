@@ -220,6 +220,34 @@ services:
       - "traefik.http.routers.radarr-api.tls.certresolver=myresolver"
       - "traefik.http.routers.radarr-api.priority=2"
 
+  lidarr:
+    container_name: lidarr
+    image: linuxserver/lidarr:nightly
+    depends_on:
+      - traefik
+    restart: always
+    ports:
+      - 8686:8686
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    volumes:
+      - ${CONFIGROOT}/lidarr:/config
+      - ${MEDIAROOT}:/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=myresolver"
+      - "traefik.http.routers.lidarr.middlewares=auth"
+      - "traefik.http.routers.lidarr.priority=1"
+      - "traefik.http.routers.lidarr-api.rule=Host(`lidarr.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.lidarr-api.entrypoints=websecure"
+      - "traefik.http.routers.lidarr-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.lidarr-api.priority=2"
+
   nextcloud:
     container_name: nextcloud
     image: nextcloud
