@@ -143,7 +143,7 @@ services:
 
   jackett:
     container_name: jackett
-    image: linuxserver/jackett:latest
+    image: sclemenceau/docker-jackett:cloudproxy
     depends_on:
       - traefik
     restart: always
@@ -163,6 +163,13 @@ services:
       - "traefik.http.routers.jackett.entrypoints=websecure"
       - "traefik.http.routers.jackett.tls.certresolver=myresolver"
       - "traefik.http.routers.jackett.middlewares=auth"
+
+  cloudproxy:
+    image: noahcardoza/cloudproxy
+    container_name: cloudproxy
+    restart: always
+    ports:
+      - 8191:8191
 
   sonarr:
     container_name: sonarr
