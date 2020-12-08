@@ -13,7 +13,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
       - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
       - "traefik.http.routers.portainer.entrypoints=websecure"
       - "traefik.http.routers.portainer.tls.certresolver=myresolver"
@@ -111,6 +110,35 @@ services:
       - "traefik.http.routers.organizr.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.organizr.entrypoints=websecure"
       - "traefik.http.routers.organizr.tls.certresolver=myresolver"
+
+  bitwarden:
+    container_name: bitwarden
+    image: bitwardenrs/server
+    depends_on:
+      - traefik
+    restart: always
+    volumes:
+      - ${CONFIGROOT}/bitwarden:/data
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=true
+      - ADMIN_TOKEN=${BITWARDEN_ADMIN_TOKEN}
+    ports:
+      - 8085:80
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bitwarden.entrypoints=websecure"
+      - "traefik.http.routers.bitwarden.tls.certresolver=myresolver"
+      - "traefik.http.routers.bitwarden.rule=Host(`bw.${DOMAIN}`)"
+
+  bitwarden_ldap:
+    container_name: bitwarden_ldap
+    image: vividboarder/bitwarden_rs_ldap
+    volumes:
+      - ${CONFIGROOT}/bitwarden/config.toml:/config.toml:ro
+    environment:
+      CONFIG_PATH: /config.toml
+      RUST_BACKTRACE: 1
 
   qbittorrentvpn:
     container_name: qbittorrentvpn
@@ -316,7 +344,6 @@ services:
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN}`) || (Host(`${DOMAIN}`) && PathPrefix(`/jellyfin`))"
       - "traefik.http.routers.jellyfin.entrypoints=websecure"
       - "traefik.http.routers.jellyfin.tls.certresolver=myresolver"
-      - "traefik.http.services.jellyfin.loadBalancer.server.port=8096"
 
   pp-1:
     container_name: pp-1
@@ -350,7 +377,6 @@ services:
       - ${MEDIAROOT}/nextcloud/mesnigan/files/Videos:/photoprism/originals/Videos
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.pp-1.loadbalancer.server.port=2342"
       - "traefik.http.routers.pp-1.entrypoints=websecure"
       - "traefik.http.routers.pp-1.tls.certresolver=myresolver"
       - "traefik.http.routers.pp-1.rule=Host(`pp-1.${DOMAIN}`)"
