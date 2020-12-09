@@ -191,6 +191,11 @@ services:
       - "traefik.http.routers.jackett.entrypoints=websecure"
       - "traefik.http.routers.jackett.tls.certresolver=myresolver"
       - "traefik.http.routers.jackett.middlewares=auth"
+      - "traefik.http.routers.jackett.priority=1"
+      - "traefik.http.routers.jackett-api.rule=Host(`jackett.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.jackett-api.entrypoints=websecure"
+      - "traefik.http.routers.jackett-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.jackett-api.priority=2"
 
   cloudproxy:
     image: noahcardoza/cloudproxy
