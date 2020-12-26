@@ -123,6 +123,12 @@ services:
       - WEBSOCKET_ENABLED=true
       - SIGNUPS_ALLOWED=true
       - ADMIN_TOKEN=${BITWARDEN_ADMIN_TOKEN}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_PORT=587
+      - SMTP_SSL=true
+      - SMTP_USERNAME=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASS}
     ports:
       - 8085:80
     labels:
@@ -216,7 +222,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - UMASK_SET=022
     volumes:
       - ${CONFIGROOT}/sonarr:/config
       - ${MEDIAROOT}:/media
@@ -234,7 +239,7 @@ services:
 
   radarr:
     container_name: radarr
-    image: linuxserver/radarr:nightly
+    image: linuxserver/radarr:latest
     depends_on:
       - traefik
     restart: always
@@ -244,7 +249,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - UMASK_SET=022
     volumes:
       - ${CONFIGROOT}/radarr:/config
       - ${MEDIAROOT}:/media
@@ -319,8 +323,6 @@ services:
       - "traefik.http.routers.nextcloud.entrypoints=websecure"
       - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
       - "traefik.http.routers.nextcloud.middlewares=cloud_headers,cloud_redirectregex"
-      - "traefik.http.middlewares.nextcloud.headers.customFrameOptionsValue=ALLOW-FROM https://${DOMAIN}"
-      - "traefik.http.middlewares.nextcloud.headers.contentSecurityPolicy=frame-ancestors 'self' ${DOMAIN}"
       - "traefik.http.middlewares.cloud_headers.headers.framedeny=true"
       - "traefik.http.middlewares.cloud_headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.cloud_headers.headers.stsPreload=true"
